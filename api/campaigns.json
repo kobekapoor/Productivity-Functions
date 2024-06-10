@@ -1,0 +1,20 @@
+[
+    {
+        "name": "B1 Homes",
+        "id": "154215845517548",
+        "campaigns": [
+            {
+                "name": "Be Mega | Inboda | B1 Homes",
+                "start_date": "2024-06-01",
+                "end_date": "2024-06-15",
+                "set_budget": 1500
+            },
+            {
+                "name": "FIFO | Inboda | B1 Homes",
+                "start_date": "2024-06-01",
+                "end_date": "2024-06-15",
+                "set_budget": 2700
+            }
+        ]
+    }
+]
