@@ -94,6 +94,7 @@ const EditCampaignsPage = () => {
   const handleSave = async () => {
     setLoading(true);
     try {
+      console.log("Saving data:", accounts); // Log the data being sent
       const response = await fetch('/api/campaigns', {
         method: 'POST',
         headers: {

@@ -1,7 +1,6 @@
-from http.client import HTTPException
+from fastapi import FastAPI, Request, HTTPException
 import os
 import json
-from fastapi import FastAPI, Request
 import requests
 from dotenv import load_dotenv
 from datetime import datetime
@@ -16,6 +15,8 @@ ACCESS_TOKEN = os.getenv('FACEBOOK_ACCESS_TOKEN')
 
 # Slack Webhook URL from environment variables
 SLACK_WEBHOOK_URL = os.getenv('SLACK_WEBHOOK_URL')
+
+JSON_SERVER_URL = os.getenv('JSON_SERVER_URL')
 
 def get_campaigns_and_spend(ad_account_id, campaign_name, start_date, end_date, access_token):
     url = f"https://graph.facebook.com/v17.0/act_{ad_account_id}/campaigns"
@@ -79,12 +80,11 @@ def send_slack_message(message):
 
 @app.get("/api/facebook/spend")
 def facebook_ad_spend(request: Request):
-    # Load campaigns data from JSON file
-    json_file_path = os.path.join(os.path.dirname(__file__), 'campaigns.json')
-    with open(json_file_path, 'r') as file:
-        campaigns_data = json.load(file)
-        
     try:
+        response = requests.get(JSON_SERVER_URL)
+        response.raise_for_status()
+        campaigns_data = response.json()
+        
         send_slack = request.query_params.get('send_slack', 'false').lower() == 'true'
         account_spends = []
         slack_message = "*Facebook Ads Spend Report*\n"
@@ -156,29 +156,26 @@ def facebook_ad_spend(request: Request):
     except Exception as e:
         return {"error": str(e)}
 
-
 @app.get("/api/campaigns")
-def get_campaigns_json():
-    # Load campaigns data from JSON file
-    json_file_path = os.path.join(os.path.dirname(__file__), 'campaigns.json')
+def get_campaigns():
     try:
-        with open(json_file_path, 'r') as file:
-            data = json.load(file)
-        return data
+        response = requests.get(JSON_SERVER_URL)
+        response.raise_for_status()
+        return response.json()
     except Exception as e:
-        raise HTTPException(status_code=500, detail="Failed to read campaigns.json file")
+        raise HTTPException(status_code=500, detail="Failed to fetch campaigns")
 
 @app.post("/api/campaigns")
-async def update_campaigns_json(request: Request):
-    print("Updating campaigns.json file")
-    # Load campaigns data from JSON file
-    json_file_path = os.path.join(os.path.dirname(__file__), 'campaigns.json')
+async def update_campaigns(request: Request):
     try:
         updated_data = await request.json()
-        print(updated_data)
-        with open(json_file_path, 'w') as file:
-            json.dump(updated_data, file, indent=2)
+        print(f"Updated data received: {updated_data}")
+        response = requests.put(JSON_SERVER_URL, json=updated_data)
+        response.raise_for_status()
         return {"message": "File updated successfully"}
+    except requests.exceptions.RequestException as e:
+        print(f"RequestException: {e}")
+        raise HTTPException(status_code=500, detail="Failed to update campaigns")
     except Exception as e:
-        print(e)
-        raise HTTPException(status_code=500, detail="Failed to update campaigns.json file")
+        print(f"General Exception: {e}")
+        raise HTTPException(status_code=500, detail="Failed to update campaigns")
