@@ -1,3 +1,4 @@
+from http.client import HTTPException
 import os
 import json
 from fastapi import FastAPI, Request
@@ -15,11 +16,6 @@ ACCESS_TOKEN = os.getenv('FACEBOOK_ACCESS_TOKEN')
 
 # Slack Webhook URL from environment variables
 SLACK_WEBHOOK_URL = os.getenv('SLACK_WEBHOOK_URL')
-
-# Load campaigns data from JSON file
-json_file_path = os.path.join(os.path.dirname(__file__), 'campaigns.json')
-with open(json_file_path, 'r') as file:
-    campaigns_data = json.load(file)
 
 def get_campaigns_and_spend(ad_account_id, campaign_name, start_date, end_date, access_token):
     url = f"https://graph.facebook.com/v17.0/act_{ad_account_id}/campaigns"
@@ -83,6 +79,11 @@ def send_slack_message(message):
 
 @app.get("/api/facebook/spend")
 def facebook_ad_spend(request: Request):
+    # Load campaigns data from JSON file
+    json_file_path = os.path.join(os.path.dirname(__file__), 'campaigns.json')
+    with open(json_file_path, 'r') as file:
+        campaigns_data = json.load(file)
+        
     try:
         send_slack = request.query_params.get('send_slack', 'false').lower() == 'true'
         account_spends = []
@@ -154,3 +155,30 @@ def facebook_ad_spend(request: Request):
         return account_spends
     except Exception as e:
         return {"error": str(e)}
+
+
+@app.get("/api/campaigns")
+def get_campaigns_json():
+    # Load campaigns data from JSON file
+    json_file_path = os.path.join(os.path.dirname(__file__), 'campaigns.json')
+    try:
+        with open(json_file_path, 'r') as file:
+            data = json.load(file)
+        return data
+    except Exception as e:
+        raise HTTPException(status_code=500, detail="Failed to read campaigns.json file")
+
+@app.post("/api/campaigns")
+async def update_campaigns_json(request: Request):
+    print("Updating campaigns.json file")
+    # Load campaigns data from JSON file
+    json_file_path = os.path.join(os.path.dirname(__file__), 'campaigns.json')
+    try:
+        updated_data = await request.json()
+        print(updated_data)
+        with open(json_file_path, 'w') as file:
+            json.dump(updated_data, file, indent=2)
+        return {"message": "File updated successfully"}
+    except Exception as e:
+        print(e)
+        raise HTTPException(status_code=500, detail="Failed to update campaigns.json file")
