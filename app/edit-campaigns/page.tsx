@@ -106,7 +106,7 @@ const EditCampaignsPage = () => {
       }
       alert('Campaigns updated successfully');
     } catch (error) {
-      setError(error.message);
+      setError((error as Error).message);
     } finally {
       setLoading(false);
     }
