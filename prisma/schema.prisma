@@ -1,0 +1,118 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url = env("POSTGRES_PRISMA_URL")
+  directUrl = env("POSTGRES_URL_NON_POOLING")
+}
+
+model User {
+  id            String       @default(cuid()) @id
+  name          String?
+  email         String?   @unique
+  createdAt     DateTime  @default(now()) @map(name: "created_at")
+  updatedAt     DateTime  @updatedAt @map(name: "updated_at")
+  @@map(name: "users")
+}
+
+model FacebookAccount {
+  accountId    String @unique @id
+  createdAt     DateTime  @default(now()) @map(name: "created_at")
+  updatedAt     DateTime  @updatedAt @map(name: "updated_at")
+  clientId      String?
+  client        Client? @relation(fields: [clientId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  campaigns     Campaign[]
+
+  @@map(name: "facebook_accounts")
+  @@index([accountId])
+}
+
+model GoogleAccount {
+  id            String       @default(cuid()) @id
+  userId        String
+  googleId      String
+  createdAt     DateTime  @default(now()) @map(name: "created_at")
+  updatedAt     DateTime  @updatedAt @map(name: "updated_at")
+  clientId      String?
+  client        Client? @relation(fields: [clientId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  campaigns     Campaign[]
+
+  @@map(name: "google_accounts")
+  @@index([userId])
+  @@index([googleId])
+}
+
+model Client {
+  id           String       @default(cuid()) @id
+  name         String
+  createdAt    DateTime  @default(now()) @map(name: "created_at")
+  updatedAt    DateTime  @updatedAt @map(name: "updated_at")
+  facebookAccounts FacebookAccount[]
+  googleAccounts GoogleAccount[]
+  @@map(name: "clients")
+}
+
+model Campaign {
+  id           String       @default(cuid()) @id
+  name         String
+  facebookAccountId String?
+  facebookAccount FacebookAccount? @relation(fields: [facebookAccountId], references: [accountId], onDelete: Cascade, onUpdate: Cascade)
+  facebookCampaignId String?
+  googleAccountId String?
+  googleAccount GoogleAccount? @relation(fields: [googleAccountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  googleCampaignId String?
+  createdAt     DateTime  @default(now()) @map(name: "created_at")
+  updatedAt     DateTime  @updatedAt @map(name: "updated_at")
+  budgets       Budget[]
+  adSets        AdSet[]
+  results       Result[]
+
+  @@map(name: "campaigns")
+}
+
+model AdSet {
+  id           String       @default(cuid()) @id
+  campaignId   String
+  name         String
+  facebookAdSetId String?
+  googleAdSetId String?
+  createdAt    DateTime  @default(now()) @map(name: "created_at")
+  updatedAt    DateTime  @updatedAt @map(name: "updated_at")
+  campaign     Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  budgets      Budget[]
+  results      Result[]
+
+  @@map(name: "ad_sets")
+}
+
+model Budget {
+  id           String       @default(cuid()) @id
+  amount       Float
+  createdAt    DateTime  @default(now()) @map(name: "created_at")
+  updatedAt    DateTime  @updatedAt @map(name: "updated_at")
+  startDate    DateTime
+  endDate      DateTime
+  campaignId   String?
+  campaign     Campaign? @relation(fields: [campaignId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  adSetId      String?
+  adSet        AdSet? @relation(fields: [adSetId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  results      Result[]
+
+  @@map(name: "budgets")
+}
+
+model Result {
+  id           String       @default(cuid()) @id
+  campaignId   String?
+  campaign     Campaign? @relation(fields: [campaignId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  adSetId      String?
+  adSet        AdSet? @relation(fields: [adSetId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  budgetId     String?
+  budget       Budget? @relation(fields: [budgetId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  spent        Float
+  results      Json
+
+  @@map(name: "results")
+}

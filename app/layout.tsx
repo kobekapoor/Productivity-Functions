@@ -30,6 +30,9 @@ export default function RootLayout({
               <Link href="/" legacyBehavior>
                 <a className="text-white hover:text-gray-200">Home</a>
               </Link>
+              <Link href="/campaigns" legacyBehavior>
+                <a className="text-white hover:text-gray-200">Campaigns</a>
+              </Link>
               <Link href="/edit-campaigns" legacyBehavior>
                 <a className="text-white hover:text-gray-200">Edit Campaigns</a>
               </Link>
